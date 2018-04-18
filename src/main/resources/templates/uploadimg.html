@@ -8,6 +8,38 @@
     <meta name="content-type" content="text/html; charset=UTF-8"></meta>
 
     <!--<link rel="stylesheet" type="text/css" href="./styles.css">-->
+    <script src="https://cdn.wincustomer.net/js/jquery-2.2.4.min.js"></script>
+    <script type="text/javascript">
+        /*
+         * 上传文件
+         */
+        function submitFunction() {
+            //这里唯一需要注意的就是这个form-add的id
+            var formData = new FormData($("#form-add")[0]);
+            $.ajax({
+                //接口地址
+                url: '/testuploadimg' ,
+                type: 'POST',
+                data: formData,
+                async: false,
+                cache: false,
+                contentType: false,
+                processData: false,
+                success: function (data) {
+                    //成功的回调
+                    alert( "success");
+                    document.getElementById("show").innerHTML="success";
+
+
+
+                },
+                error: function (returndata) {
+                    //请求异常的回调
+                    // modals.warn("网络访问失败，请稍后重试!");
+                }
+            });
+        }
+    </script>
 
 </head>
 
@@ -15,6 +47,29 @@
 <form enctype="multipart/form-data" method="post" action="/testuploadimg">
     图片<input type="file" name="file"/>
     <input type="submit" value="上传"/>
+</form>
+
+<a id="show"></a>
+<form id="uploadfiles" enctype="multipart/form-data">
+    <input type="file" multiple="multiple" id="file_upload" name="file" />
+    <input type="button" value="上传" onclick="upload()" />
+</form>
+
+//定义好id，ajax会用到
+<form id="form-add">
+<!--    //单选项 （解释：name要与接口的参数名对应起来，value是对应值）
+    <input type="radio" name="imageNameIndex"  value="1"> 一号位
+    <input type="radio" name="imageNameIndex"  value="2"> 二号位
+    <input type="radio" name="imageNameIndex"  value="3"> 二号位
+
+    //文字 （解释：name要与接口的参数名对应起来）
+    <input type="text" name="url">-->
+
+    <!--//文件 （解释：name要与接口的参数名对应起来）-->
+    <input type="file" name="file">
+
+   <!-- 提交 （解释：这个按钮的唯一作用就是触发提交的js方法）-->
+    <button type="button"  onclick="submitFunction()">提交</button>
 </form>
 </body>
 </html>

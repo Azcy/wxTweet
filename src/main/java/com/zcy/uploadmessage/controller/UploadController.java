@@ -40,6 +40,7 @@ public class UploadController {
             // TODO: handle exception
         }
         //返回json
+        System.out.println( "uploadimg success");
         return "uploadimg success";
     }
 
