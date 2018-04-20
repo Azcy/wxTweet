@@ -1,38 +1,58 @@
 package com.zcy.uploadmessage.controller;
 
-import com.zcy.uploadmessage.entity.Person;
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
+import com.zcy.uploadmessage.service.WxService;
 import com.zcy.uploadmessage.util.FileUtil;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Logger;
+
 
 @Controller
 
 public class UploadController {
-    //跳转到上传文件的页面
-    @RequestMapping(value="/gouploadimg", method = RequestMethod.GET)
-    public String goUploadImg() {
-        //跳转到 templates 目录下的 uploadimg.html
-        return "uploadimg";
+    private static final Logger logger = Logger.getLogger("");
+
+    @Autowired
+    WxService wxService;
+
+
+    //跳转到上传页面
+    @RequestMapping(value = "/upload", method = RequestMethod.GET)
+    public String upload() {
+        return "upload";
     }
 
-    //处理文件上传
-    @RequestMapping(value="/testuploadimg", method = RequestMethod.POST)
-    public @ResponseBody
-    String uploadImg(@RequestParam("file") MultipartFile file,
-                     HttpServletRequest request) {
+    //微信推送
+    @RequestMapping(value = "/pushMessage", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+    @ResponseBody
+    public String pushMessage(@RequestParam("data") String data, @RequestParam("url") String url, HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+        String result = wxService.getWxMessage(data, url);
+
+        return result;
+    }
+
+    //获取mediaid
+    @RequestMapping(value = "/getMediaId", method = RequestMethod.POST, produces = "application/json;charset=UTF-8")
+    @ResponseBody
+    public String uploadMediaImg(@RequestParam("file") MultipartFile file, @RequestParam("url") String url,
+                                 HttpServletResponse response) throws Exception {
+
+        response.setHeader("Access-Control-Allow-Origin", "*");
         String contentType = file.getContentType();
         String fileName = file.getOriginalFilename();
         /*System.out.println("fileName-->" + fileName);
         System.out.println("getContentType-->" + contentType);*/
-        String filePath ="/home/yk-zcy/IDEAWorkSpace/uploadmessage/src/main/resources/upload/";
+        String filePath = "/tmp/upload/";
         //String filePath = request.getSession().getServletContext().getRealPath("imgupload/");
         try {
             FileUtil.uploadFile(file.getBytes(), filePath, fileName);
@@ -40,37 +60,16 @@ public class UploadController {
             // TODO: handle exception
         }
         //返回json
-        System.out.println( "uploadimg success");
-        return "uploadimg success";
-    }
+        System.out.println("uploadimg success");
 
-    @RequestMapping("/")
-    public String hello() {
-        return "hello,Spring boot!";
-    }
+        File Sendfile = new File(filePath + fileName);
 
+        logger.info("wxurl:"+url);
 
-    @RequestMapping(value = "/greeting")
-    public ModelAndView test(ModelAndView mv) {
-        mv.setViewName("/greeting");
-        mv.addObject("title","欢迎使用Thymeleaf!");
-        return mv;
-    }
+        JSONObject result = wxService.send(url,filePath+fileName);
 
+        logger.info("uploadMediaImg result"+result);
+        return JSON.toJSONString(result);
 
-    @RequestMapping(value = "/index")
-    public String index(Model model)
-    {
-        Person single = new Person("hyj",21);
-        List<Person> people = new ArrayList<Person>();
-        Person p1 = new Person("dlp",21);
-        Person p2 = new Person("tq",21);
-        Person p3 = new Person("mk",21);
-        people.add(p1);
-        people.add(p2);
-        people.add(p3);
-        model.addAttribute("singlePerson",single);
-        model.addAttribute("people",people);
-        return "index";
     }
 }

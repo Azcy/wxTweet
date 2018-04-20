@@ -16,6 +16,7 @@
         function submitFunction() {
             //这里唯一需要注意的就是这个form-add的id
             var formData = new FormData($("#form-add")[0]);
+            formData.append("url","www.baidu.com");
             $.ajax({
                 //接口地址
                 url: '/testuploadimg' ,
@@ -39,6 +40,42 @@
                 }
             });
         }
+
+        function sendTxt() {
+            var openid = "12321321";
+            console.log('openid:'+openid, openid instanceof  Array);
+            if(openid.length>0){
+                var sendDate = JSON.stringify({
+                    "touser":openid,
+                    "msgtype": "text",
+                    "text": { "content": "23123"}
+                });
+                console.log("sendDate",sendDate);
+                if(true){
+                    $.ajax({
+                        url:"/pushMessage",
+                        type: "POST",
+                        data: {data:sendDate, url:"https://api.weixin.qq.com/cgi-bin/message/mass/send?access_token="+"token" },
+                        success: function (data) {
+                            var obj = JSON.parse(data);
+                            alert("成功");
+                            obj.errmsg=="send job submission success"&&alert('推送成功');
+                            console.log('推送文本: '+JSON.stringify(obj));
+                            console.log(obj.errmsg);
+                        },
+                        error: function (returndata) {
+                            //请求异常的回调
+                            alert("失败"+returndata);
+                        }
+                    });
+                }else {
+                    alert('请输入token')
+                }
+
+            }else {
+                alert('请输入推送人openid');
+            }
+        }
     </script>
 
 </head>
@@ -52,7 +89,7 @@
 <a id="show"></a>
 <form id="uploadfiles" enctype="multipart/form-data">
     <input type="file" multiple="multiple" id="file_upload" name="file" />
-    <input type="button" value="上传" onclick="upload()" />
+    <input type="button" value="上传" onclick="" />
 </form>
 
 //定义好id，ajax会用到
@@ -69,7 +106,7 @@
     <input type="file" name="file">
 
    <!-- 提交 （解释：这个按钮的唯一作用就是触发提交的js方法）-->
-    <button type="button"  onclick="submitFunction()">提交</button>
+    <button type="button"  onclick="sendTxt()">提交</button>
 </form>
 </body>
 </html>

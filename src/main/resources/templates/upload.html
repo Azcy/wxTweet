@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>生成推送图文json</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.wincustomer.net/style/reset.css">
+    <style>
+        html {
+            padding-bottom: 50px;
+        }
+
+        .input {
+            width: 1195px;
+            height: 30px;
+            display: block;
+            padding-left: 5px;
+        }
+
+        .commentext {
+            width: 1195px;
+            height: 150px;
+            resize: none;
+            margin: 5px auto;
+        }
+
+        #all {
+            padding-top: 20px;
+            width: 1200px;
+            height: auto;
+            margin: 0 auto;
+            font-size: 14px;
+        }
+
+        .btns {
+
+            width: 1250px;
+            overflow: hidden;
+            margin: 0 auto;
+            margin-top: 20px;
+
+        }
+
+        .btn {
+            width: 200px;
+            height: 50px;
+            background: orangered;
+            color: #fff;
+            text-align: center;
+            line-height: 50px;
+            border-radius: 6px;
+            cursor: pointer;
+            float: left;
+        }
+
+        .btn1 {
+            padding: 0 10px;
+            height: 30px;
+            background: orangered;
+            color: #fff;
+            text-align: center;
+            line-height: 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            float: left;
+            margin-top: 5px;
+        }
+
+        p {
+            text-align: center;
+            font-size: 16px;
+            margin-top: 15px;
+            color: red;
+            visibility: hidden;
+        }
+
+        #show_id, #preview_id {
+            height: 50px;
+        }
+
+        #select_img {
+            margin-top: 15px;
+            display: inline;
+        }
+
+        #upload_img {
+            height: 30px;
+            margin: 15px;
+            padding: 0 5px;
+        }
+
+        .short_input {
+            width: 895px;
+            height: 30px;
+            display: block;
+            padding-left: 5px;
+        }
+
+        .tips {
+            display: inline-block;
+            margin-top: 5px;
+            line-height: 30px;
+            margin-left: 15px;
+            display: block;
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+
+<div id="all">
+
+    <label for="title" style="color: red;">文章标题（必填）<input type="text" id="title" class="short_input"/></label>
+    <label for="token" style="color: red;">token：<input type="text" id="token" class="short_input"/></label>
+    <!--上传图片-->
+    <label for="select_img"><input type="file" class="short_input" id="select_img" value="上传文件" style="width: 200px;"/></label>
+    <input type="button" value="上传图片" id="upload_img"/>
+    <br><label for="mediaId" style="color: red;">媒体ID（上传图片后自动获得）<input type="text" id="mediaId" class="short_input"
+                                                                       readonly/></label>
+    <!--其他-->
+    <label for="url">内容资源URL(阅读原文链接)<input type="text" id="url" class="input"/></label>
+    <!--<label for="author">作者：<input type="text" id="author" class="input" /></label>-->
+    <label for="digest">摘要：</span><input type="text" id="digest" class="input"/></label>
+
+    <label for="content" style="color: red;">文章内容（HTML或文本）（必填）<textarea name="content" id="content" class="commentext"
+                                                                        cols="30" rows="10"></textarea></label>
+    <div id="make_json" class="btn1">添加文章内容</div>
+    <br><span class="tips">生成的json：</span>
+    <label for="showcont"><textarea name="content" id="showcont" class="commentext" cols="30"
+                                    rows="10"></textarea></label>
+
+
+    <div id="send_string" class="btn1">生成媒体ID字符串</div>
+    <br>
+    <br><br><label for="show_id" style="color: red;">生成的媒体ID（上传图片后自动获得）<input type="text" id="show_id"
+                                                                              class="short_input"
+                                                                              readonly/></label>
+    <!-- <label for="show_id" style="color: red;">
+         <br><span class="tips">生成的媒体ID：（自动获得）</span>
+         <input type="text" id="show_id" class="short_input"
+                readonly/>
+        &lt;!&ndash; <textarea name="content" id="show_id" class="commentext" cols="30" rows="10"></textarea>&ndash;&gt;
+     </label>-->
+
+    <label for="preview_id">
+        <span class="tips">预览人或者推送人列表openID(id与id之间用英文逗号隔开)：</span><textarea name="content" id="preview_id"
+                                                                             class="commentext" cols="30"
+                                                                             rows="10"></textarea></label>
+    <div class="btns">
+
+
+        <div id="btn_preview" class="btn">推送预览</div>
+        <div id="btn_send" class="btn" style="margin: 0 50px ;">推送所选人</div>
+        <div id="btn_send_tag" class="btn" style="margin-right: 50px;">推送指定标签</div>
+        <div id="btn_send_txt" class="btn">推送文本</div>
+        <div id="btn_clear" class="btn" style="margin-left: 50px;">清空填写内容</div>
+
+    </div>
+    <p>你还可以继续添加文章<br>如过已经添加完毕，直接复制即可</p>
+</div>
+<script src="https://cdn.wincustomer.net/js/jquery-2.2.4.min.js"></script>
+
+<script>
+
+    /********************************************流程*********************************/
+    var btn = document.getElementById('make_json');
+    /* 将一篇文章序列化成json */
+    var btn2 = document.getElementById('send_string');
+    /* 按钮-》生成最终的推送mediaID */
+    var token = '';
+    /*用于存储token*/
+    var jsonString = '';
+    /* 最终推文json */
+    var mediaIds = [];
+    /* 用于存储已添加推文的mediaID，以免重复添加 */
+    var base64 = '';
+    /* 好像没有用到 */
+    /* 用于存储所有推文内容的对象 */
+    var allAticle = {
+        articles: []/* 图文列表，第一篇是头条 */
+    };
+    /*将当前的推文序列化成json，并且储存到allAticle对象中*/
+    btn.onclick = function () {
+        getJson();
+    };
+    btn2.onclick = function () {
+        creatMediaId();
+    };
+    /*点击推送预览*/
+    $('#btn_preview').click(function () {
+        preview();
+    });
+    /*根据openID推送*/
+    $('#btn_send').click(function () {
+        sendChoose();
+        console.log('send');
+    });
+    /*根据标签推送*/
+    $('#btn_send_tag').click(function () {
+        sendForTagID();
+    });
+    /*上传图片，并获取mediaId*/
+    $('#upload_img').click(function () {
+        var picURL = $('#select_img').val();
+        token = $('#token').val();
+        if (picURL != '') {
+            uploadMediaImg(token, picURL);
+            /* 上传图片，并将获取的mediaID显示的方法 */
+        } else {
+            alert('请选择上传的图片');
+        }
+
+    });
+    /*发送文本消息*/
+    $('#btn_send_txt').click(function () {
+        token = $('#token').val();
+        var theTxt = $('#content').val();
+        sendTxt(token, theTxt);
+    });
+    /********************************************方法*********************************/
+    /*发送文本消息*/
+    function sendTxt(token, txt) {
+        var openid = $('#preview_id').val().split(',');
+        console.log('openid:' + openid, openid instanceof Array);
+        if (openid.length > 0) {
+            var sendDate = JSON.stringify({
+                "touser": openid,
+                "msgtype": "text",
+                "text": {"content": txt}
+            });
+            if (token) {
+                $.ajax({
+                    type: "POST",
+                    url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                    data: {
+                        data: sendDate,
+                        url: "https://api.weixin.qq.com/cgi-bin/message/mass/send?access_token=" + token
+                    },
+                    success: function (data) {
+                        var obj = JSON.parse(data);
+                        console.log(obj);
+                        obj.errmsg == "send job submission success" && alert('推送成功');
+                        console.log('推送文本: ' + JSON.stringify(obj));
+                        console.log(obj.errmsg);
+                    }
+                });
+            } else {
+                alert('请输入token')
+            }
+
+        } else {
+            alert('请输入推送人openid');
+        }
+    }
+
+    /*推送文本预览*/
+    function previewTXT(token, txt) {
+        console.log('previewTXT running');
+        try {
+            var openid = $('#preview_id').val().split(',');
+            var sendDate = JSON.stringify({
+                "touser": openid,
+                "msgtype": "text",
+                "text": {"content": txt}
+            });
+            if (token != '' && openid.length > 0) {
+                $.ajax({
+                    type: "POST",
+                    url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                    data: {
+                        data: sendDate,
+                        url: "https://api.weixin.qq.com/cgi-bin/message/mass/preview?access_token=" + token
+                    },
+                    success: function (data) {
+                        var obj = eval('(' + data + ')');
+                        console.log(obj);
+                        obj.errmsg == "preview success" && alert('发送预览成功');
+                    }
+                });
+            } else {
+                alert('参数不足')
+            }
+        } catch (e) {
+            console.log('previewTxt:', e);
+        }
+    }
+
+    /*根据标签群发*/
+    function sendForTagID() {
+        var tagID = $('#preview_id').val();
+        var mediaId = $('#show_id').val();
+        var sendDate = JSON.stringify({
+            "filter": {
+                "is_to_all": false,
+                "tag_id": tagID
+            },
+            "mpnews": {
+                "media_id": mediaId
+            },
+            "msgtype": "mpnews",
+            "send_ignore_reprint": 0
+        });
+        if (token != '' && tagID != '' && mediaId != '') {
+            if (tagID != '' && tagID != null) {
+                $.ajax({
+                    type: "POST",
+                    url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                    data: {
+                        data: sendDate,
+                        url: "https://api.weixin.qq.com/cgi-bin/message/mass/sendall?access_token=" + token
+                    },
+                    success: function (data) {
+                        var obj = eval('(' + data + ')');
+                        obj.errmsg == "send job submission success" && alert('推送成功');
+                        console.log('根据标签发送成功: ' + JSON.stringify(obj));
+                        console.log(obj.errmsg);
+                    }
+                });
+            } else {
+                alert('tagid不能为空');
+            }
+        } else {
+            alert('参数不足')
+        }
+    };
+
+    /*转为将当前的一篇推文转为json的方法*/
+    function getJson() {
+        var ctitle = document.getElementById('title').value;
+        /*当前文章的title*/
+        var curl = document.getElementById('url').value;
+        var cmediaId = document.getElementById('mediaId').value;
+        /*当前文章的mediaId*/
+        var cdigest = document.getElementById('digest').value;
+        /* 获取当前推文的摘要 */
+        var ccontent = document.getElementById('content').value;
+        /* 获取当前推文的html结构 */
+        token = document.getElementById('token').value;
+        /* 获取token */
+
+        if (ctitle == "") {
+            alert('文章标题不能为空');
+        } else if (cmediaId == '') {
+            alert('媒体ID不能为空');
+        } else if (ccontent == '') {
+            alert('推文内容不能为空');
+        } else if (token == '') {
+            alert('token 不能为空')
+        } else {
+            var thisArticle = {
+                thumb_media_id: cmediaId,
+                author: "",
+                title: ctitle,
+                content_source_url: curl || "",
+                content: ccontent,
+                digest: cdigest || "",
+                show_cover_pic: 0,
+                need_open_comment: 1,
+                only_fans_can_comment: 0
+            };
+            console.log(mediaIds.indexOf(cmediaId));
+
+            if (mediaIds.indexOf(cmediaId) == -1) {
+                allAticle.articles.push(thisArticle);
+                mediaIds.push(cmediaId);
+                jsonString = JSON.stringify(allAticle);
+            } else {
+                alert('已添加过的文章');
+            }
+            document.querySelector('#showcont').innerHTML = jsonString;
+            document.querySelector('p').style.visibility = 'inherit';
+        }
+
+    }
+
+    /*获取mediaId*/
+    function creatMediaId() {
+        if (token != '' || jsonString != '') {
+            $.ajax({
+                type: "POST",
+                url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                data: {
+                    data: jsonString,
+                    url: "https://api.weixin.qq.com/cgi-bin/media/uploadnews?access_token=" + token
+                },
+                success: function (result) {
+                    //成功的回调
+
+                    console.log("data:" + result);
+                    document.getElementById("show_id").value = result.media_id;
+
+
+                },
+            });
+        } else {
+            alert('你还没有生成推文json')
+        }
+    }
+
+    /*  发送预览，只能发送单个openid  */
+    function preview() {
+        alert('点击推送预览');
+        var openid = $('#preview_id').val();
+        /*获取openid*/
+        var mediaId = $('#show_id').val();
+        /*获取mediaId*/
+        /*data中的data只能是字符，需要用stringify将对象序列化 */
+        var sendDate = JSON.stringify({
+            "touser": openid,
+            "mpnews": {
+                "media_id": mediaId
+            },
+            "msgtype": "mpnews"
+        });
+        if (token != '' && openid != '' && mediaId != '') {
+            $.ajax({
+                type: "POST",
+                url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                data: {
+                    data: sendDate,
+                    url: "https://api.weixin.qq.com/cgi-bin/message/mass/preview?access_token=" + token
+                },
+                success: function (data) {
+                    var obj = eval('(' + data + ')');
+                    obj.errmsg == "preview success" && alert('发送预览成功');
+                }
+            });
+        } else {
+            alert('参数不足')
+        }
+    }
+
+    /*根据openID推送的功能*/
+    function sendChoose() {
+        var openids = ($('#preview_id').val()).split(',');
+        var mediaId = $('#show_id').val();
+        var sendDate = JSON.stringify({
+            "touser": openids,
+            "mpnews": {
+                "media_id": mediaId
+            },
+            "msgtype": "mpnews",
+            "send_ignore_reprint": 0
+        });
+
+        if (token != '' && openids != '' && mediaId != '') {
+            $.ajax({
+                type: "POST",
+                url: "https://m.wincustomer.net/wxTweet/pushMessage",
+                data: {
+                    data: sendDate,
+                    url: "https://api.weixin.qq.com/cgi-bin/message/mass/send?access_token=" + token
+                },
+                success: function (data) {
+                    var obj = eval('(' + data + ')');
+                    obj.errmsg == "send job submission success" && alert('推送成功');
+                    console.log(obj);
+                }
+            });
+        } else {
+            alert('参数不足')
+        }
+
+    }
+
+    /*上传图片获取mediaID*/
+    /*  function uploadMediaImg(_token,picVal) {
+        var formFile=new FormData();
+
+        formFile.append("file",document.getElementById("select_img").files[0]);
+        var date=formFile;
+
+        var sendDate = JSON.stringify({
+            url:'http://file.api.weixin.qq.com/cgi-bin/media/upload?access_token='+_token+'&type=image',
+            file:date
+          });
+        if(token!=''){
+          $.ajax({
+              url:'/getMediaId',
+              data: sendDate,
+              type: "POST",
+              dataType: "json",
+              cache: false,//上传文件无需缓存
+              processData: false,//用于对data参数进行序列化处理 这里必须false
+              contentType: false, //必须
+              success: function (data) {
+              var obj = eval('('+data+')');
+              obj.errmsg=="send job submission success"&&alert('推送成功');
+              document.getElementById("mediaId").value=obj.media_id;
+
+              console.log(obj);
+            },
+          });
+        }else{
+          alert('参数不足');
+        }
+      }*/
+    function uploadMediaImg(_token, picVal) {
+        var data = new FormData();
+        var url = 'http://file.api.weixin.qq.com/cgi-bin/media/upload?access_token=' + _token + '&type=image';
+        data.append("file", document.getElementById("select_img").files[0]);
+        data.append("url", url);
+
+
+        //var thisUrl =encodeURIComponent(url);
+        $.ajax({
+            //接口地址
+            url: 'https://m.wincustomer.net/wxTweet/getMediaId',
+            type: 'POST',
+            data: data,
+            async: false,
+            cache: false,
+            contentType: false,
+            processData: false,
+            success: function (result) {
+                //成功的回调
+                alert("success");
+                console.log("data:" + result);
+                document.getElementById("mediaId").value = result.media_id;
+
+
+            },
+            error: function (returndata) {
+                //请求异常的回调
+                alert("请求失败");
+                console.log("请求失败");
+                // modals.warn("网络访问失败，请稍后重试!");
+            }
+        });
+
+        /* xhr.onreadystatechange = function (evt) {
+             if (evt.currentTarget.readyState == 4 && evt.currentTarget.status == 200) {
+                 var sendPayData = JSON.parse(evt.currentTarget.responseText);
+                 document.getElementById("mediaId").value = sendPayData.media_id;
+                 console.log(sendPayData.media_id);
+             } else {
+                 console.log(evt.currentTarget.readyState);
+             }
+         };*/
+        return;
+    }
+
+    /*清空填写列表*/
+    function clear() {
+        document.getElementById('title').value = '';
+        /* 清空标题 */
+        document.getElementById('url').value = '';
+        /* 清空阅读原文url */
+        document.getElementById('mediaId').value = '';
+        /* 清空上传图片后的mediaID */
+        document.getElementById('digest').value = '';
+        /* 清空摘要 */
+        document.getElementById('content').value = '';
+        /* 清空单个推文html结构 */
+    }
+
+    /*绑定清空操作*/
+    document.getElementById('btn_clear').onclick = clear;
+</script>
+</body>
+</html>
